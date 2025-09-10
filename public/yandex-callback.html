@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация через Яндекс</title>
+</head>
+<body>
+    <script>
+        // Получаем токен из URL
+        const hash = window.location.hash;
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const error = params.get('error');
+
+        if (accessToken) {
+            // Успешная авторизация
+            window.opener.postMessage({
+                type: 'YANDEX_AUTH_SUCCESS',
+                access_token: accessToken
+            }, window.location.origin);
+        } else if (error) {
+            // Ошибка авторизации
+            window.opener.postMessage({
+                type: 'YANDEX_AUTH_ERROR',
+                error: error
+            }, window.location.origin);
+        } else {
+            // Неизвестная ошибка
+            window.opener.postMessage({
+                type: 'YANDEX_AUTH_ERROR',
+                error: 'Неизвестная ошибка авторизации'
+            }, window.location.origin);
+        }
+
+        // Закрываем окно
+        window.close();
+    </script>
+</body>
+</html>
