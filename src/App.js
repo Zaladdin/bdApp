@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
-import Navbar from './components/Navbar';
+// import Navbar from './components/Navbar'; // Не используется
 import Dashboard from './components/Dashboard';
 import Guests from './components/Guests';
 import Wishlist from './components/Wishlist';
 import Location from './components/Location';
 import Photos from './components/Photos';
+import Auth from './components/Auth';
+import UserMenu from './components/UserMenu';
+import Invitations from './components/Invitations';
 
 // Настройка axios
 const isDevelopment = process.env.NODE_ENV === 'development';
 axios.defaults.baseURL = isDevelopment ? 'http://localhost:5000/api' : '/api';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, invitations
   const [eventData, setEventData] = useState({
     guests: [],
     wishlist: [],
@@ -28,19 +33,25 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Загружаем данные из localStorage
-    loadDataFromStorage();
+    // Проверяем авторизацию
+    const savedUser = localStorage.getItem('birthdayAppCurrentUser');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      loadDataFromStorage();
+    }
   }, []);
 
   const loadDataFromStorage = () => {
     try {
-      const savedData = localStorage.getItem('birthdayAppData');
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        setEventData(parsedData);
-        console.log('Data loaded from localStorage:', parsedData);
-      } else {
-        console.log('No saved data found, using defaults');
+      if (user) {
+        const userData = localStorage.getItem(`birthdayAppData_${user.id}`);
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          setEventData(parsedData);
+          console.log('User data loaded from localStorage:', parsedData);
+        } else {
+          console.log('No saved data found for user, using defaults');
+        }
       }
     } catch (error) {
       console.error('Error loading data from localStorage:', error);
@@ -70,12 +81,14 @@ function App() {
     const updatedData = { ...eventData, ...newData };
     setEventData(updatedData);
     
-    // Сохраняем в localStorage
-    try {
-      localStorage.setItem('birthdayAppData', JSON.stringify(updatedData));
-      console.log('Data saved to localStorage:', updatedData);
-    } catch (error) {
-      console.error('Error saving data to localStorage:', error);
+    // Сохраняем в localStorage для конкретного пользователя
+    if (user) {
+      try {
+        localStorage.setItem(`birthdayAppData_${user.id}`, JSON.stringify(updatedData));
+        console.log('User data saved to localStorage:', updatedData);
+      } catch (error) {
+        console.error('Error saving data to localStorage:', error);
+      }
     }
   };
 
@@ -90,13 +103,95 @@ function App() {
     );
   }
 
+  const handleLogin = (userData) => {
+    setUser(userData);
+    // Загружаем данные для нового пользователя
+    try {
+      const savedUserData = localStorage.getItem(`birthdayAppData_${userData.id}`);
+      if (savedUserData) {
+        const parsedData = JSON.parse(savedUserData);
+        setEventData(parsedData);
+        console.log('User data loaded from localStorage:', parsedData);
+      } else {
+        console.log('No saved data found for user, using defaults');
+      }
+    } catch (error) {
+      console.error('Error loading data from localStorage:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setEventData({
+      guests: [],
+      wishlist: [],
+      location: { name: '', address: '', date: '', time: '' },
+      photos: []
+    });
+  };
+
+  const handleShowMyEvents = () => {
+    setCurrentView('dashboard');
+  };
+
+  const handleShowInvitations = () => {
+    setCurrentView('invitations');
+  };
+
+  // Если пользователь не авторизован, показываем форму входа
+  if (!user) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
+  // Если выбраны приглашения, показываем их
+  if (currentView === 'invitations') {
+    return (
+      <Router>
+        <div className="min-h-screen">
+          <nav className="glass-effect rounded-lg mx-4 mt-4 mb-8">
+            <div className="container mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-white">
+                  Организатор Дня Рождения
+                </h1>
+                <UserMenu 
+                  user={user}
+                  onLogout={handleLogout}
+                  onShowMyEvents={handleShowMyEvents}
+                  onShowInvitations={handleShowInvitations}
+                />
+              </div>
+            </div>
+          </nav>
+          <main className="container mx-auto px-4 py-8">
+            <Invitations user={user} onBack={handleShowMyEvents} />
+          </main>
+        </div>
+      </Router>
+    );
+  }
+
   // Добавляем простой тест для отладки
   console.log('Rendering App component, loading:', loading, 'eventData:', eventData);
 
   return (
     <Router>
       <div className="min-h-screen">
-        <Navbar />
+        <nav className="glass-effect rounded-lg mx-4 mt-4 mb-8">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-white">
+                Организатор Дня Рождения
+              </h1>
+              <UserMenu 
+                user={user}
+                onLogout={handleLogout}
+                onShowMyEvents={handleShowMyEvents}
+                onShowInvitations={handleShowInvitations}
+              />
+            </div>
+          </div>
+        </nav>
         <main className="container mx-auto px-4 py-8">
           <Routes>
             <Route 
