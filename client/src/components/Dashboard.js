@@ -81,13 +81,6 @@ const Dashboard = ({ eventData, onUpdate }) => {
         <p className="text-white text-lg opacity-90">
           Управляйте всеми аспектами вашего праздника в одном месте
         </p>
-        {!process.env.NODE_ENV || process.env.NODE_ENV === 'production' ? (
-          <div className="mt-4 p-4 bg-yellow-500 bg-opacity-20 rounded-lg border border-yellow-500 border-opacity-30">
-            <p className="text-yellow-200 text-sm">
-              🚀 Это демо-версия приложения! Для полной функциональности запустите локально.
-            </p>
-          </div>
-        ) : null}
       </div>
 
       {/* Статистика */}

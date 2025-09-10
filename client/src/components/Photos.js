@@ -10,6 +10,8 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const Photos = ({ photos, onUpdate }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
@@ -152,7 +154,7 @@ const Photos = ({ photos, onUpdate }) => {
               >
                 <div className="relative">
                   <img
-                    src={`http://localhost:5000${photo.path}`}
+                    src={isDevelopment ? `http://localhost:5000${photo.path}` : photo.path}
                     alt={photo.originalName}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => {
@@ -215,7 +217,7 @@ const Photos = ({ photos, onUpdate }) => {
             </button>
             
             <img
-              src={`http://localhost:5000${selectedPhoto.path}`}
+              src={isDevelopment ? `http://localhost:5000${selectedPhoto.path}` : selectedPhoto.path}
               alt={selectedPhoto.originalName}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
