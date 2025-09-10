@@ -22,5 +22,7 @@
       "src": "/(.*)",
       "dest": "/client/build/$1"
     }
-  ]
+  ],
+  "installCommand": "cd client && npm install",
+  "buildCommand": "cd client && npm run build"
 }
