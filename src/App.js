@@ -37,6 +37,13 @@ function App() {
       setEventData(response.data);
     } catch (error) {
       console.error('Ошибка при загрузке данных:', error);
+      // Устанавливаем пустые данные в случае ошибки
+      setEventData({
+        guests: [],
+        wishlist: [],
+        location: { name: '', address: '', date: '', time: '' },
+        photos: []
+      });
     } finally {
       setLoading(false);
     }
