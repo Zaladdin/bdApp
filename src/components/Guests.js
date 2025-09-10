@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { 
   Plus, 
   Edit, 
@@ -22,18 +21,26 @@ const Guests = ({ guests, onUpdate }) => {
     status: 'pending'
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     try {
       if (editingGuest) {
-        await axios.put(`/api/guests/${editingGuest.id}`, formData);
+        // Редактируем существующего гостя
+        const updatedGuests = guests.map(guest => 
+          guest.id === editingGuest.id 
+            ? { ...guest, ...formData }
+            : guest
+        );
+        onUpdate({ guests: updatedGuests });
       } else {
-        await axios.post('/api/guests', formData);
+        // Добавляем нового гостя
+        const newGuest = {
+          id: Date.now().toString(), // Простой ID
+          ...formData,
+          createdAt: new Date().toISOString()
+        };
+        onUpdate({ guests: [...guests, newGuest] });
       }
-      
-      // Обновляем данные
-      const response = await axios.get('/api/event');
-      onUpdate(response.data);
       
       // Сбрасываем форму
       setFormData({ name: '', email: '', phone: '', status: 'pending' });
@@ -41,9 +48,7 @@ const Guests = ({ guests, onUpdate }) => {
       setEditingGuest(null);
     } catch (error) {
       console.error('Ошибка при сохранении гостя:', error);
-      console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      alert(`Ошибка при сохранении гостя: ${error.response?.data?.error || error.message}`);
+      alert('Ошибка при сохранении гостя');
     }
   };
 
@@ -58,12 +63,11 @@ const Guests = ({ guests, onUpdate }) => {
     setShowModal(true);
   };
 
-  const handleDelete = async (guestId) => {
+  const handleDelete = (guestId) => {
     if (window.confirm('Вы уверены, что хотите удалить этого гостя?')) {
       try {
-        await axios.delete(`/api/guests/${guestId}`);
-        const response = await axios.get('/api/event');
-        onUpdate(response.data);
+        const updatedGuests = guests.filter(guest => guest.id !== guestId);
+        onUpdate({ guests: updatedGuests });
       } catch (error) {
         console.error('Ошибка при удалении гостя:', error);
         alert('Ошибка при удалении гостя');

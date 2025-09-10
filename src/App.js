@@ -28,17 +28,22 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Тестируем API
-    testAPI();
+    // Загружаем данные из localStorage
+    loadDataFromStorage();
   }, []);
 
-  const testAPI = async () => {
+  const loadDataFromStorage = () => {
     try {
-      console.log('Testing API...');
-      const response = await axios.get('/api/event');
-      console.log('API works!', response.data);
+      const savedData = localStorage.getItem('birthdayAppData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        setEventData(parsedData);
+        console.log('Data loaded from localStorage:', parsedData);
+      } else {
+        console.log('No saved data found, using defaults');
+      }
     } catch (error) {
-      console.error('API test failed:', error);
+      console.error('Error loading data from localStorage:', error);
     }
   };
 
@@ -62,7 +67,16 @@ function App() {
   };
 
   const updateEventData = (newData) => {
-    setEventData(prev => ({ ...prev, ...newData }));
+    const updatedData = { ...eventData, ...newData };
+    setEventData(updatedData);
+    
+    // Сохраняем в localStorage
+    try {
+      localStorage.setItem('birthdayAppData', JSON.stringify(updatedData));
+      console.log('Data saved to localStorage:', updatedData);
+    } catch (error) {
+      console.error('Error saving data to localStorage:', error);
+    }
   };
 
   if (loading) {
