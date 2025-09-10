@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { 
   Plus, 
   Trash2, 
@@ -19,14 +18,17 @@ const Wishlist = ({ wishlist, guests, onUpdate }) => {
     price: ''
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/wishlist', formData);
+      const newItem = {
+        id: Date.now().toString(),
+        ...formData,
+        selectedBy: [],
+        createdAt: new Date().toISOString()
+      };
       
-      // Обновляем данные
-      const response = await axios.get('/api/event');
-      onUpdate(response.data);
+      onUpdate({ wishlist: [...wishlist, newItem] });
       
       // Сбрасываем форму
       setFormData({ url: '', title: '', description: '', price: '' });
@@ -37,12 +39,11 @@ const Wishlist = ({ wishlist, guests, onUpdate }) => {
     }
   };
 
-  const handleDelete = async (itemId) => {
+  const handleDelete = (itemId) => {
     if (window.confirm('Вы уверены, что хотите удалить этот подарок из вишлиста?')) {
       try {
-        await axios.delete(`/api/wishlist/${itemId}`);
-        const response = await axios.get('/api/event');
-        onUpdate(response.data);
+        const updatedWishlist = wishlist.filter(item => item.id !== itemId);
+        onUpdate({ wishlist: updatedWishlist });
       } catch (error) {
         console.error('Ошибка при удалении из вишлиста:', error);
         alert('Ошибка при удалении из вишлиста');
@@ -50,17 +51,22 @@ const Wishlist = ({ wishlist, guests, onUpdate }) => {
     }
   };
 
-  const handleSelect = async (itemId, guestId) => {
+  const handleSelect = (itemId, guestId) => {
     try {
-      const item = wishlist.find(w => w.id === itemId);
-      if (item.selectedBy.includes(guestId)) {
-        await axios.put(`/wishlist/${itemId}/deselect`, { guestId });
-      } else {
-        await axios.put(`/wishlist/${itemId}/select`, { guestId });
-      }
+      const updatedWishlist = wishlist.map(item => {
+        if (item.id === itemId) {
+          if (item.selectedBy.includes(guestId)) {
+            // Убираем выбор
+            return { ...item, selectedBy: item.selectedBy.filter(id => id !== guestId) };
+          } else {
+            // Добавляем выбор
+            return { ...item, selectedBy: [...item.selectedBy, guestId] };
+          }
+        }
+        return item;
+      });
       
-      const response = await axios.get('/event');
-      onUpdate(response.data);
+      onUpdate({ wishlist: updatedWishlist });
     } catch (error) {
       console.error('Ошибка при выборе подарка:', error);
       alert('Ошибка при выборе подарка');

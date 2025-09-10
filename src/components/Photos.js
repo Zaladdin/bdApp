@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
 import { 
   Upload, 
   Camera, 
@@ -17,26 +16,28 @@ const Photos = ({ photos, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const formData = new FormData();
       files.forEach(file => {
-        formData.append('photos', file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const newPhoto = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            originalName: file.name,
+            path: e.target.result, // Data URL
+            size: file.size,
+            type: file.type,
+            uploadedAt: new Date().toISOString()
+          };
+          
+          onUpdate({ photos: [...photos, newPhoto] });
+        };
+        reader.readAsDataURL(file);
       });
-
-      await axios.post('/api/photos', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      // Обновляем данные
-      const response = await axios.get('/api/event');
-      onUpdate(response.data);
       
       // Очищаем input
       if (fileInputRef.current) {
@@ -50,12 +51,11 @@ const Photos = ({ photos, onUpdate }) => {
     }
   };
 
-  const handleDelete = async (photoId) => {
+  const handleDelete = (photoId) => {
     if (window.confirm('Вы уверены, что хотите удалить эту фотографию?')) {
       try {
-        await axios.delete(`/api/photos/${photoId}`);
-        const response = await axios.get('/api/event');
-        onUpdate(response.data);
+        const updatedPhotos = photos.filter(photo => photo.id !== photoId);
+        onUpdate({ photos: updatedPhotos });
       } catch (error) {
         console.error('Ошибка при удалении фотографии:', error);
         alert('Ошибка при удалении фотографии');
@@ -65,7 +65,7 @@ const Photos = ({ photos, onUpdate }) => {
 
   const handleDownload = (photo) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:5000${photo.path}`;
+    link.href = photo.path; // Data URL
     link.download = photo.originalName;
     document.body.appendChild(link);
     link.click();

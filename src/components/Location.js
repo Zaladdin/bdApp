@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { 
   MapPin, 
   Calendar, 
@@ -18,15 +17,10 @@ const Location = ({ location, onUpdate }) => {
     time: location.time || ''
   });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     try {
-      await axios.put('/api/location', formData);
-      
-      // Обновляем данные
-      const response = await axios.get('/api/event');
-      onUpdate(response.data);
-      
+      onUpdate({ location: formData });
       setIsEditing(false);
     } catch (error) {
       console.error('Ошибка при сохранении места:', error);
