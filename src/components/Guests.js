@@ -41,7 +41,9 @@ const Guests = ({ guests, onUpdate }) => {
       setEditingGuest(null);
     } catch (error) {
       console.error('Ошибка при сохранении гостя:', error);
-      alert('Ошибка при сохранении гостя');
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      alert(`Ошибка при сохранении гостя: ${error.response?.data?.error || error.message}`);
     }
   };
 

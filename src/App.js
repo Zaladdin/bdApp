@@ -28,9 +28,19 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Убираем загрузку данных для тестирования
-    console.log('App mounted successfully');
+    // Тестируем API
+    testAPI();
   }, []);
+
+  const testAPI = async () => {
+    try {
+      console.log('Testing API...');
+      const response = await axios.get('/api/event');
+      console.log('API works!', response.data);
+    } catch (error) {
+      console.error('API test failed:', error);
+    }
+  };
 
   // eslint-disable-next-line no-unused-vars
   const fetchEventData = async () => {
