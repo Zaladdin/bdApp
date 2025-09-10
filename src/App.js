@@ -25,10 +25,11 @@ function App() {
     photos: []
   });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchEventData();
+    // Убираем загрузку данных для тестирования
+    console.log('App mounted successfully');
   }, []);
 
   const fetchEventData = async () => {
@@ -63,6 +64,9 @@ function App() {
       </div>
     );
   }
+
+  // Добавляем простой тест для отладки
+  console.log('Rendering App component, loading:', loading, 'eventData:', eventData);
 
   return (
     <Router>
