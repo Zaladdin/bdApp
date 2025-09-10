@@ -176,5 +176,10 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: error.message });
 });
 
+// Обработка всех методов для Vercel
+app.all('*', (req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
+
 // Экспорт для Vercel
 module.exports = app;
