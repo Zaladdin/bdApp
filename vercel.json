@@ -16,8 +16,12 @@
       "dest": "/server/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/build/$1"
+      "src": "/static/(.*)",
+      "dest": "/build/static/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/build/favicon.ico"
     },
     {
       "src": "/(.*)",
