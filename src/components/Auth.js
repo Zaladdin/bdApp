@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import YandexAuth from './YandexAuth';
 
 const Auth = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -209,6 +210,21 @@ const Auth = ({ onLogin }) => {
               : 'Уже есть аккаунт? Войти'
             }
           </button>
+        </div>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white border-opacity-20"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-transparent text-white opacity-60">или</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <YandexAuth onLogin={onLogin} />
         </div>
       </div>
     </div>

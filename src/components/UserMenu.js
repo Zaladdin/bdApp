@@ -30,12 +30,25 @@ const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
         <div className="absolute right-0 mt-2 w-64 glass-effect rounded-lg shadow-lg z-50">
           <div className="p-4">
             <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-white border-opacity-20">
-              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <User className="h-6 w-6 text-white" />
+              <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
+                {user.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="h-6 w-6 text-white" />
+                )}
               </div>
               <div>
                 <p className="text-white font-semibold">{user.name}</p>
                 <p className="text-white text-sm opacity-80">{user.email}</p>
+                {user.provider && (
+                  <p className="text-white text-xs opacity-60">
+                    Вход через {user.provider === 'yandex' ? 'Яндекс' : user.provider}
+                  </p>
+                )}
               </div>
             </div>
 
