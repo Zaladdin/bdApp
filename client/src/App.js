@@ -9,17 +9,56 @@ import Location from './components/Location';
 import Photos from './components/Photos';
 
 // Настройка axios
-axios.defaults.baseURL = 'http://localhost:5000/api';
+const isDevelopment = process.env.NODE_ENV === 'development';
+axios.defaults.baseURL = isDevelopment ? 'http://localhost:5000/api' : '/api';
 
 function App() {
   const [eventData, setEventData] = useState({
-    guests: [],
-    wishlist: [],
+    guests: [
+      {
+        id: 'demo-1',
+        name: 'Анна Петрова',
+        email: 'anna@example.com',
+        phone: '+7 (999) 123-45-67',
+        status: 'confirmed',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-2',
+        name: 'Михаил Иванов',
+        email: 'mikhail@example.com',
+        phone: '+7 (999) 234-56-78',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      }
+    ],
+    wishlist: [
+      {
+        id: 'demo-wish-1',
+        url: 'https://example.com/gift1',
+        title: 'Книга "Программирование на JavaScript"',
+        description: 'Отличная книга для изучения программирования',
+        price: '1500 руб.',
+        image: '',
+        selectedBy: ['demo-1'],
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'demo-wish-2',
+        url: 'https://example.com/gift2',
+        title: 'Беспроводные наушники',
+        description: 'Качественные наушники с шумоподавлением',
+        price: '5000 руб.',
+        image: '',
+        selectedBy: [],
+        createdAt: new Date().toISOString()
+      }
+    ],
     location: {
-      name: '',
-      address: '',
-      date: '',
-      time: ''
+      name: 'Ресторан "Золотой дракон"',
+      address: 'ул. Примерная, д. 123, г. Москва',
+      date: '2024-12-25',
+      time: '19:00'
     },
     photos: []
   });
@@ -32,10 +71,17 @@ function App() {
 
   const fetchEventData = async () => {
     try {
-      const response = await axios.get('/event');
-      setEventData(response.data);
+      if (isDevelopment) {
+        const response = await axios.get('/event');
+        setEventData(response.data);
+      } else {
+        // В продакшене используем демо-данные
+        setEventData(eventData);
+      }
     } catch (error) {
       console.error('Ошибка при загрузке данных:', error);
+      // В случае ошибки используем демо-данные
+      setEventData(eventData);
     } finally {
       setLoading(false);
     }
