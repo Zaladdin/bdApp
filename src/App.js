@@ -32,6 +32,7 @@ function App() {
     console.log('App mounted successfully');
   }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const fetchEventData = async () => {
     try {
       const response = await axios.get('/event');
