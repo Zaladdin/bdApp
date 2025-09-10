@@ -6,8 +6,7 @@ import {
   Trash2, 
   Download,
   Eye,
-  X,
-  Image as ImageIcon
+  X
 } from 'lucide-react';
 
 const isDevelopment = process.env.NODE_ENV === 'development';

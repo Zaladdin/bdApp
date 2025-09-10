@@ -4,7 +4,6 @@ import {
   Plus, 
   Trash2, 
   Check, 
-  X,
   Gift,
   ExternalLink,
   Users,
