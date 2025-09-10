@@ -22,10 +22,10 @@ const Wishlist = ({ wishlist, guests, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/wishlist', formData);
+      await axios.post('/api/wishlist', formData);
       
       // Обновляем данные
-      const response = await axios.get('/event');
+      const response = await axios.get('/api/event');
       onUpdate(response.data);
       
       // Сбрасываем форму
@@ -40,8 +40,8 @@ const Wishlist = ({ wishlist, guests, onUpdate }) => {
   const handleDelete = async (itemId) => {
     if (window.confirm('Вы уверены, что хотите удалить этот подарок из вишлиста?')) {
       try {
-        await axios.delete(`/wishlist/${itemId}`);
-        const response = await axios.get('/event');
+        await axios.delete(`/api/wishlist/${itemId}`);
+        const response = await axios.get('/api/event');
         onUpdate(response.data);
       } catch (error) {
         console.error('Ошибка при удалении из вишлиста:', error);

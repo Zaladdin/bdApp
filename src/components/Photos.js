@@ -28,14 +28,14 @@ const Photos = ({ photos, onUpdate }) => {
         formData.append('photos', file);
       });
 
-      await axios.post('/photos', formData, {
+      await axios.post('/api/photos', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
       // Обновляем данные
-      const response = await axios.get('/event');
+      const response = await axios.get('/api/event');
       onUpdate(response.data);
       
       // Очищаем input
@@ -53,8 +53,8 @@ const Photos = ({ photos, onUpdate }) => {
   const handleDelete = async (photoId) => {
     if (window.confirm('Вы уверены, что хотите удалить эту фотографию?')) {
       try {
-        await axios.delete(`/photos/${photoId}`);
-        const response = await axios.get('/event');
+        await axios.delete(`/api/photos/${photoId}`);
+        const response = await axios.get('/api/event');
         onUpdate(response.data);
       } catch (error) {
         console.error('Ошибка при удалении фотографии:', error);

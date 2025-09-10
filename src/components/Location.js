@@ -21,10 +21,10 @@ const Location = ({ location, onUpdate }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('/location', formData);
+      await axios.put('/api/location', formData);
       
       // Обновляем данные
-      const response = await axios.get('/event');
+      const response = await axios.get('/api/event');
       onUpdate(response.data);
       
       setIsEditing(false);

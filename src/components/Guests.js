@@ -26,13 +26,13 @@ const Guests = ({ guests, onUpdate }) => {
     e.preventDefault();
     try {
       if (editingGuest) {
-        await axios.put(`/guests/${editingGuest.id}`, formData);
+        await axios.put(`/api/guests/${editingGuest.id}`, formData);
       } else {
-        await axios.post('/guests', formData);
+        await axios.post('/api/guests', formData);
       }
       
       // Обновляем данные
-      const response = await axios.get('/event');
+      const response = await axios.get('/api/event');
       onUpdate(response.data);
       
       // Сбрасываем форму
@@ -59,8 +59,8 @@ const Guests = ({ guests, onUpdate }) => {
   const handleDelete = async (guestId) => {
     if (window.confirm('Вы уверены, что хотите удалить этого гостя?')) {
       try {
-        await axios.delete(`/guests/${guestId}`);
-        const response = await axios.get('/event');
+        await axios.delete(`/api/guests/${guestId}`);
+        const response = await axios.get('/api/event');
         onUpdate(response.data);
       } catch (error) {
         console.error('Ошибка при удалении гостя:', error);
