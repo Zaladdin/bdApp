@@ -1,48 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
-
-// Создаем папку для загрузок если её нет
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Настройка multer для загрузки файлов
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${uuidv4()}-${file.originalname}`;
-    cb(null, uniqueName);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Только изображения разрешены!'), false);
-    }
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
-});
 
 // Временное хранилище данных (в реальном приложении используйте базу данных)
 let eventData = {
@@ -76,7 +40,7 @@ app.post('/api/guests', (req, res) => {
     name,
     email,
     phone,
-    status: status || 'pending', // pending, confirmed, declined
+    status: status || 'pending',
     createdAt: new Date().toISOString()
   };
   eventData.guests.push(guest);
@@ -118,15 +82,14 @@ app.post('/api/wishlist', async (req, res) => {
   const { url, title, description, price } = req.body;
   
   try {
-    // Здесь можно добавить логику для получения превью ссылки
     const wishlistItem = {
       id: uuidv4(),
       url,
       title: title || 'Без названия',
       description: description || '',
       price: price || '',
-      image: '', // Будет заполнено при получении превью
-      selectedBy: [], // Массив ID гостей, которые выбрали этот подарок
+      image: '',
+      selectedBy: [],
       createdAt: new Date().toISOString()
     };
     
@@ -183,57 +146,35 @@ app.put('/api/location', (req, res) => {
   res.json(eventData.location);
 });
 
-// Фотографии
+// Фотографии (упрощенная версия для Vercel)
 app.get('/api/photos', (req, res) => {
   res.json(eventData.photos);
 });
 
-app.post('/api/photos', upload.array('photos', 10), (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ error: 'Файлы не загружены' });
-  }
-  
-  const uploadedPhotos = req.files.map(file => ({
+app.post('/api/photos', (req, res) => {
+  // В Vercel загрузка файлов ограничена, поэтому используем заглушку
+  const mockPhoto = {
     id: uuidv4(),
-    filename: file.filename,
-    originalName: file.originalname,
-    path: `/uploads/${file.filename}`,
+    filename: 'demo-photo.jpg',
+    originalName: 'Демо фото',
+    path: '/api/demo-photo',
     uploadedAt: new Date().toISOString()
-  }));
+  };
   
-  eventData.photos.push(...uploadedPhotos);
-  res.json(uploadedPhotos);
+  eventData.photos.push(mockPhoto);
+  res.json([mockPhoto]);
 });
 
 app.delete('/api/photos/:id', (req, res) => {
   const { id } = req.params;
-  const photo = eventData.photos.find(p => p.id === id);
-  
-  if (!photo) {
-    return res.status(404).json({ error: 'Фото не найдено' });
-  }
-  
-  // Удаляем файл с диска
-  const filePath = path.join(__dirname, photo.path);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-  
-  // Удаляем из массива
   eventData.photos = eventData.photos.filter(p => p.id !== id);
   res.json({ message: 'Фото удалено' });
 });
 
 // Обработка ошибок
 app.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'Файл слишком большой (максимум 5MB)' });
-    }
-  }
   res.status(500).json({ error: error.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`Сервер запущен на порту ${PORT}`);
-});
+// Экспорт для Vercel
+module.exports = app;
