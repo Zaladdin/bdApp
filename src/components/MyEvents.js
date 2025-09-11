@@ -11,29 +11,49 @@ import {
   Trash2,
   Eye
 } from 'lucide-react';
+import { eventAPI } from '../services/api';
 
 const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
   const [activeTab, setActiveTab] = useState('active'); // 'active', 'archive', 'create'
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadEvents = useCallback(() => {
+  const loadEvents = useCallback(async () => {
     try {
-      const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
-      const userEvents = [];
-
-      // Ищем мероприятия текущего пользователя
-      Object.entries(allEvents).forEach(([eventId, event]) => {
-        if (event.ownerId === user.id) {
-          userEvents.push({
-            ...event,
-            id: eventId,
-            isArchived: event.isArchived || false
-          });
-        }
-      });
-
-      setEvents(userEvents);
+      setLoading(true);
+      
+      // Пытаемся загрузить с сервера
+      try {
+        const response = await eventAPI.getUserEvents(user.id);
+        const serverEvents = response.data || [];
+        setEvents(serverEvents);
+        
+        // Синхронизируем с localStorage
+        const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
+        const localUserEvents = Object.entries(allEvents)
+          .filter(([id, event]) => event.ownerId === user.id)
+          .map(([id, event]) => ({ id, ...event }));
+        
+        // Объединяем данные (сервер имеет приоритет)
+        const mergedEvents = [...serverEvents];
+        localUserEvents.forEach(localEvent => {
+          if (!serverEvents.find(serverEvent => serverEvent.id === localEvent.id)) {
+            mergedEvents.push(localEvent);
+          }
+        });
+        
+        setEvents(mergedEvents);
+      } catch (serverError) {
+        console.log('Сервер недоступен, используем localStorage:', serverError);
+        
+        // Fallback к localStorage
+        const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
+        const userEvents = Object.entries(allEvents)
+          .filter(([id, event]) => event.ownerId === user.id)
+          .map(([id, event]) => ({ id, ...event }));
+        
+        setEvents(userEvents);
+      }
     } catch (error) {
       console.error('Ошибка загрузки мероприятий:', error);
     } finally {
@@ -45,12 +65,24 @@ const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
     loadEvents();
   }, [loadEvents]);
 
-  const handleArchiveEvent = (eventId) => {
+  const handleArchiveEvent = async (eventId) => {
     try {
-      const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
-      if (allEvents[eventId]) {
-        allEvents[eventId] = { ...allEvents[eventId], isArchived: true };
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        const updatedEvent = { ...event, isArchived: true };
+        
+        // Сохраняем на сервер
+        try {
+          await eventAPI.saveEvent(eventId, updatedEvent);
+        } catch (serverError) {
+          console.log('Сервер недоступен, сохраняем локально:', serverError);
+        }
+        
+        // Сохраняем локально
+        const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
+        allEvents[eventId] = updatedEvent;
         localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
+        
         loadEvents();
       }
     } catch (error) {
@@ -58,12 +90,24 @@ const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
     }
   };
 
-  const handleUnarchiveEvent = (eventId) => {
+  const handleUnarchiveEvent = async (eventId) => {
     try {
-      const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
-      if (allEvents[eventId]) {
-        allEvents[eventId] = { ...allEvents[eventId], isArchived: false };
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        const updatedEvent = { ...event, isArchived: false };
+        
+        // Сохраняем на сервер
+        try {
+          await eventAPI.saveEvent(eventId, updatedEvent);
+        } catch (serverError) {
+          console.log('Сервер недоступен, сохраняем локально:', serverError);
+        }
+        
+        // Сохраняем локально
+        const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
+        allEvents[eventId] = updatedEvent;
         localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
+        
         loadEvents();
       }
     } catch (error) {
@@ -71,12 +115,21 @@ const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
     }
   };
 
-  const handleDeleteEvent = (eventId) => {
+  const handleDeleteEvent = async (eventId) => {
     if (window.confirm('Вы уверены, что хотите удалить это мероприятие?')) {
       try {
+        // Удаляем с сервера
+        try {
+          await eventAPI.deleteEvent(eventId);
+        } catch (serverError) {
+          console.log('Сервер недоступен, удаляем локально:', serverError);
+        }
+        
+        // Удаляем локально
         const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
         delete allEvents[eventId];
         localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
+        
         loadEvents();
       } catch (error) {
         console.error('Ошибка удаления мероприятия:', error);

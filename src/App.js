@@ -11,6 +11,7 @@ import Auth from './components/Auth';
 import UserMenu from './components/UserMenu';
 import Invitations from './components/Invitations';
 import MyEvents from './components/MyEvents';
+import { eventAPI } from './services/api';
 
 // Настройка axios
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -78,18 +79,28 @@ function App() {
     }
   };
 
-  const updateEventData = (newData) => {
+  const updateEventData = async (newData) => {
     const updatedData = { ...eventData, ...newData };
     setEventData(updatedData);
     
-    // Сохраняем в localStorage для конкретного мероприятия
+    // Сохраняем в localStorage и на сервер
     try {
       const currentEventId = localStorage.getItem('birthdayAppCurrentEventId');
       if (currentEventId) {
         const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
         if (allEvents[currentEventId]) {
-          allEvents[currentEventId] = { ...allEvents[currentEventId], ...updatedData };
+          const updatedEvent = { ...allEvents[currentEventId], ...updatedData };
+          allEvents[currentEventId] = updatedEvent;
           localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
+          
+          // Сохраняем на сервер
+          try {
+            await eventAPI.saveEvent(currentEventId, updatedEvent);
+            console.log('Event data saved to server:', updatedData);
+          } catch (serverError) {
+            console.log('Сервер недоступен, сохраняем только локально:', serverError);
+          }
+          
           console.log('Event data saved to localStorage:', updatedData);
         }
       } else {
@@ -100,7 +111,7 @@ function App() {
         }
       }
     } catch (error) {
-      console.error('Error saving data to localStorage:', error);
+      console.error('Error saving data:', error);
     }
   };
 
@@ -169,7 +180,7 @@ function App() {
     setCurrentView('invitations');
   };
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     // Создаем новое мероприятие
     const newEvent = {
       id: Date.now().toString(),
@@ -188,11 +199,19 @@ function App() {
       isArchived: false
     };
 
-    // Сохраняем в localStorage
+    // Сохраняем в localStorage и на сервер
     try {
       const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
       allEvents[newEvent.id] = newEvent;
       localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
+      
+      // Сохраняем на сервер
+      try {
+        await eventAPI.saveEvent(newEvent.id, newEvent);
+        console.log('Event created on server:', newEvent);
+      } catch (serverError) {
+        console.log('Сервер недоступен, создаем только локально:', serverError);
+      }
       
       // Переходим к редактированию нового мероприятия
       handleEditEvent(newEvent.id);

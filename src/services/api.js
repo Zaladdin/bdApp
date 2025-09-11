@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api' 
+  ? 'http://localhost:3000/api' 
   : '/api';
 
 const api = axios.create({
@@ -12,52 +12,47 @@ const api = axios.create({
 // API для пользователей
 export const userAPI = {
   // Получить данные пользователя
-  getUser: (userId) => api.get(`/user/${userId}`),
+  getUser: (userId) => api.get(`/users?userId=${userId}`),
   
   // Сохранить данные пользователя
-  saveUser: (userId, userData) => api.post(`/user/${userId}`, userData),
+  saveUser: (userId, userData) => api.post('/users', { userId, userData }),
 };
 
 // API для мероприятий
 export const eventAPI = {
-  // Получить мероприятие
-  getEvent: (eventId) => api.get(`/event/${eventId}`),
+  // Получить все мероприятия пользователя
+  getUserEvents: (userId) => api.get(`/events?userId=${userId}`),
   
   // Сохранить мероприятие
-  saveEvent: (eventId, eventData) => api.post(`/event/${eventId}`, eventData),
-  
-  // Получить все мероприятия пользователя
-  getUserEvents: (userId) => api.get(`/user/${userId}/events`),
+  saveEvent: (eventId, eventData) => api.post('/events', { eventId, eventData }),
   
   // Удалить мероприятие
-  deleteEvent: (eventId) => api.delete(`/event/${eventId}`),
+  deleteEvent: (eventId) => api.delete(`/events?eventId=${eventId}`),
 };
 
-// API для фотографий
+// API для фотографий (пока используем localStorage)
 export const photoAPI = {
-  // Загрузить фотографию
+  // Загрузить фотографию (локально)
   uploadPhoto: (file) => {
-    const formData = new FormData();
-    formData.append('photo', file);
-    return api.post('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const photoData = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          originalName: file.name,
+          path: e.target.result,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date().toISOString()
+        };
+        resolve({ data: photoData });
+      };
+      reader.readAsDataURL(file);
     });
   },
   
   // Получить URL фотографии
-  getPhotoUrl: (filename) => {
-    const baseUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:5000' 
-      : '';
-    return `${baseUrl}/uploads/${filename}`;
-  },
-};
-
-// API для проверки здоровья сервера
-export const healthAPI = {
-  check: () => api.get('/health'),
+  getPhotoUrl: (path) => path,
 };
 
 export default api;
