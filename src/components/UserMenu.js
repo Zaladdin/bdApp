@@ -27,7 +27,7 @@ const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 glass-effect rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-gray-900 bg-opacity-95 backdrop-blur-sm border border-white border-opacity-20 rounded-lg shadow-lg z-50">
           <div className="p-4">
             <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-white border-opacity-20">
               <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">

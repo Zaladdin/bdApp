@@ -17,10 +17,6 @@ const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadEvents();
-  }, [user, loadEvents]);
-
   const loadEvents = useCallback(() => {
     try {
       const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
@@ -44,6 +40,10 @@ const MyEvents = ({ user, onBack, onCreateEvent, onEditEvent }) => {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const handleArchiveEvent = (eventId) => {
     try {

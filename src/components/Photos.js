@@ -8,7 +8,7 @@ import {
   X
 } from 'lucide-react';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+// const isDevelopment = process.env.NODE_ENV === 'development';
 
 const Photos = ({ photos, onUpdate }) => {
   const [showModal, setShowModal] = useState(false);
@@ -22,6 +22,9 @@ const Photos = ({ photos, onUpdate }) => {
 
     setUploading(true);
     try {
+      const newPhotos = [];
+      let processedFiles = 0;
+
       files.forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -34,7 +37,14 @@ const Photos = ({ photos, onUpdate }) => {
             uploadedAt: new Date().toISOString()
           };
           
-          onUpdate({ photos: [...photos, newPhoto] });
+          newPhotos.push(newPhoto);
+          processedFiles++;
+
+          // Когда все файлы обработаны, обновляем состояние
+          if (processedFiles === files.length) {
+            onUpdate({ photos: [...photos, ...newPhotos] });
+            setUploading(false);
+          }
         };
         reader.readAsDataURL(file);
       });
@@ -46,7 +56,6 @@ const Photos = ({ photos, onUpdate }) => {
     } catch (error) {
       console.error('Ошибка при загрузке фотографий:', error);
       alert('Ошибка при загрузке фотографий');
-    } finally {
       setUploading(false);
     }
   };
@@ -153,7 +162,7 @@ const Photos = ({ photos, onUpdate }) => {
               >
                 <div className="relative">
                   <img
-                    src={isDevelopment ? `http://localhost:5000${photo.path}` : photo.path}
+                    src={photo.path}
                     alt={photo.originalName}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => {
@@ -216,7 +225,7 @@ const Photos = ({ photos, onUpdate }) => {
             </button>
             
             <img
-              src={isDevelopment ? `http://localhost:5000${selectedPhoto.path}` : selectedPhoto.path}
+              src={selectedPhoto.path}
               alt={selectedPhoto.originalName}
               className="max-w-full max-h-full object-contain rounded-lg"
             />

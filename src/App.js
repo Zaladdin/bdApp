@@ -119,11 +119,29 @@ function App() {
     setUser(userData);
     // Загружаем данные для нового пользователя
     try {
+      // Сначала проверяем, есть ли текущее мероприятие
+      const currentEventId = localStorage.getItem('birthdayAppCurrentEventId');
+      if (currentEventId) {
+        const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
+        const currentEvent = allEvents[currentEventId];
+        if (currentEvent && currentEvent.ownerId === userData.id) {
+          setEventData({
+            guests: currentEvent.guests || [],
+            wishlist: currentEvent.wishlist || [],
+            location: currentEvent.location || { name: '', address: '', date: '', time: '' },
+            photos: currentEvent.photos || []
+          });
+          console.log('Current event loaded:', currentEvent);
+          return;
+        }
+      }
+      
+      // Fallback к старому способу
       const savedUserData = localStorage.getItem(`birthdayAppData_${userData.id}`);
       if (savedUserData) {
         const parsedData = JSON.parse(savedUserData);
         setEventData(parsedData);
-        console.log('User data loaded from localStorage:', parsedData);
+        console.log('User data loaded from localStorage (fallback):', parsedData);
       } else {
         console.log('No saved data found for user, using defaults');
       }
@@ -143,6 +161,7 @@ function App() {
   };
 
   const handleShowMyEvents = () => {
+    console.log('handleShowMyEvents called, setting view to myEvents');
     setCurrentView('myEvents');
   };
 
