@@ -11,7 +11,9 @@ import Auth from './components/Auth';
 import UserMenu from './components/UserMenu';
 import Invitations from './components/Invitations';
 import MyEvents from './components/MyEvents';
+import DataSync from './components/DataSync';
 import { eventAPI } from './services/api';
+import syncService from './services/sync';
 
 // Настройка axios
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -19,7 +21,7 @@ axios.defaults.baseURL = isDevelopment ? 'http://localhost:5000/api' : '/api';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, invitations, myEvents
+  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, invitations, myEvents, sync
   const [eventData, setEventData] = useState({
     guests: [],
     wishlist: [],
@@ -83,7 +85,7 @@ function App() {
     const updatedData = { ...eventData, ...newData };
     setEventData(updatedData);
     
-    // Сохраняем в localStorage и на сервер
+    // Сохраняем в localStorage и синхронизируем
     try {
       const currentEventId = localStorage.getItem('birthdayAppCurrentEventId');
       if (currentEventId) {
@@ -93,21 +95,19 @@ function App() {
           allEvents[currentEventId] = updatedEvent;
           localStorage.setItem('birthdayAppEvents', JSON.stringify(allEvents));
           
-          // Сохраняем на сервер
-          try {
-            await eventAPI.saveEvent(currentEventId, updatedEvent);
-            console.log('Event data saved to server:', updatedData);
-          } catch (serverError) {
-            console.log('Сервер недоступен, сохраняем только локально:', serverError);
+          // Сохраняем через сервис синхронизации
+          if (user) {
+            syncService.saveData(user.id, updatedData);
           }
           
-          console.log('Event data saved to localStorage:', updatedData);
+          console.log('Event data saved to localStorage and sync service:', updatedData);
         }
       } else {
         // Fallback для старого способа сохранения
         if (user) {
           localStorage.setItem(`birthdayAppData_${user.id}`, JSON.stringify(updatedData));
-          console.log('User data saved to localStorage (fallback):', updatedData);
+          syncService.saveData(user.id, updatedData);
+          console.log('User data saved to localStorage and sync service (fallback):', updatedData);
         }
       }
     } catch (error) {
@@ -178,6 +178,10 @@ function App() {
 
   const handleShowInvitations = () => {
     setCurrentView('invitations');
+  };
+
+  const handleShowSync = () => {
+    setCurrentView('sync');
   };
 
   const handleCreateEvent = async () => {
@@ -269,6 +273,7 @@ function App() {
                   onLogout={handleLogout}
                   onShowMyEvents={handleShowMyEvents}
                   onShowInvitations={handleShowInvitations}
+                  onShowSync={handleShowSync}
                 />
               </div>
             </div>
@@ -300,6 +305,7 @@ function App() {
                   onLogout={handleLogout}
                   onShowMyEvents={handleShowMyEvents}
                   onShowInvitations={handleShowInvitations}
+                  onShowSync={handleShowSync}
                 />
               </div>
             </div>
@@ -310,6 +316,44 @@ function App() {
               onBack={() => setCurrentView('dashboard')}
               onCreateEvent={handleCreateEvent}
               onEditEvent={handleEditEvent}
+            />
+          </main>
+        </div>
+      </Router>
+    );
+  }
+
+  // Если выбрана синхронизация данных, показываем её
+  if (currentView === 'sync') {
+    return (
+      <Router>
+        <div className="min-h-screen">
+          <nav className="glass-effect rounded-lg mx-4 mt-4 mb-8">
+            <div className="container mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="text-2xl font-bold text-white hover:text-opacity-80 transition-opacity duration-200"
+                >
+                  Организатор Дня Рождения
+                </button>
+                <UserMenu 
+                  user={user}
+                  onLogout={handleLogout}
+                  onShowMyEvents={handleShowMyEvents}
+                  onShowInvitations={handleShowInvitations}
+                  onShowSync={handleShowSync}
+                />
+              </div>
+            </div>
+          </nav>
+          <main className="container mx-auto px-4 py-8">
+            <DataSync 
+              user={user} 
+              onDataImported={() => {
+                loadDataFromStorage();
+                setCurrentView('dashboard');
+              }}
             />
           </main>
         </div>

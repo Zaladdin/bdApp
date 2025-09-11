@@ -4,10 +4,11 @@ import {
   LogOut, 
   ChevronDown,
   Calendar,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react';
 
-const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
+const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations, onShowSync }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -91,6 +92,17 @@ const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
               >
                 <Users className="h-5 w-5" />
                 <span>Мои приглашения</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  onShowSync();
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center space-x-3 px-3 py-2 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200"
+              >
+                <RefreshCw className="h-5 w-5" />
+                <span>Синхронизация</span>
               </button>
 
               <div className="border-t border-white border-opacity-20 pt-2 mt-2">
