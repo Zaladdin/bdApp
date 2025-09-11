@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 // import Navbar from './components/Navbar'; // Не используется
@@ -33,16 +33,7 @@ function App() {
 
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Проверяем авторизацию
-    const savedUser = localStorage.getItem('birthdayAppCurrentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-      loadDataFromStorage();
-    }
-  }, []);
-
-  const loadDataFromStorage = () => {
+  const loadDataFromStorage = useCallback(() => {
     try {
       if (user) {
         const userData = localStorage.getItem(`birthdayAppData_${user.id}`);
@@ -57,7 +48,16 @@ function App() {
     } catch (error) {
       console.error('Error loading data from localStorage:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    // Проверяем авторизацию
+    const savedUser = localStorage.getItem('birthdayAppCurrentUser');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      loadDataFromStorage();
+    }
+  }, [loadDataFromStorage]);
 
   // eslint-disable-next-line no-unused-vars
   const fetchEventData = async () => {

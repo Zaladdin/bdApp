@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, 
   Calendar, 
@@ -14,11 +14,7 @@ const Invitations = ({ user, onBack }) => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadInvitations();
-  }, [user]);
-
-  const loadInvitations = () => {
+  const loadInvitations = useCallback(() => {
     try {
       const allEvents = JSON.parse(localStorage.getItem('birthdayAppEvents') || '{}');
       const userInvitations = [];
@@ -45,7 +41,11 @@ const Invitations = ({ user, onBack }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadInvitations();
+  }, [loadInvitations]);
 
   const handleResponse = (eventId, response) => {
     try {
