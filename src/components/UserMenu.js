@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, 
   LogOut, 
@@ -9,14 +9,32 @@ import {
 
 const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const handleLogout = () => {
     localStorage.removeItem('birthdayAppCurrentUser');
     onLogout();
   };
 
+  // Закрытие меню при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200"
@@ -27,7 +45,7 @@ const UserMenu = ({ user, onLogout, onShowMyEvents, onShowInvitations }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-gray-900 bg-opacity-95 backdrop-blur-sm border border-white border-opacity-20 rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-gray-900 bg-opacity-98 backdrop-blur-sm border border-white border-opacity-30 rounded-lg shadow-2xl z-[9999]">
           <div className="p-4">
             <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-white border-opacity-20">
               <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center overflow-hidden">
