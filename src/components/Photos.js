@@ -7,8 +7,7 @@ import {
   Eye,
   X
 } from 'lucide-react';
-
-// const isDevelopment = process.env.NODE_ENV === 'development';
+import { photoAPI } from '../services/api';
 
 const Photos = ({ photos, onUpdate }) => {
   const [showModal, setShowModal] = useState(false);
@@ -16,38 +15,26 @@ const Photos = ({ photos, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     setUploading(true);
     try {
-      const newPhotos = [];
-      let processedFiles = 0;
+      const uploadPromises = files.map(file => photoAPI.uploadPhoto(file));
+      const uploadResults = await Promise.all(uploadPromises);
+      
+      const newPhotos = uploadResults.map(result => ({
+        id: result.data.id,
+        originalName: result.data.originalName,
+        filename: result.data.filename,
+        path: result.data.path,
+        size: result.data.size,
+        type: result.data.type,
+        uploadedAt: result.data.uploadedAt
+      }));
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const newPhoto = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            originalName: file.name,
-            path: e.target.result, // Data URL
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          };
-          
-          newPhotos.push(newPhoto);
-          processedFiles++;
-
-          // Когда все файлы обработаны, обновляем состояние
-          if (processedFiles === files.length) {
-            onUpdate({ photos: [...photos, ...newPhotos] });
-            setUploading(false);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      onUpdate({ photos: [...photos, ...newPhotos] });
       
       // Очищаем input
       if (fileInputRef.current) {
@@ -56,6 +43,7 @@ const Photos = ({ photos, onUpdate }) => {
     } catch (error) {
       console.error('Ошибка при загрузке фотографий:', error);
       alert('Ошибка при загрузке фотографий');
+    } finally {
       setUploading(false);
     }
   };
@@ -162,7 +150,7 @@ const Photos = ({ photos, onUpdate }) => {
               >
                 <div className="relative">
                   <img
-                    src={photo.path}
+                    src={photo.filename ? photoAPI.getPhotoUrl(photo.filename) : photo.path}
                     alt={photo.originalName}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => {
@@ -225,7 +213,7 @@ const Photos = ({ photos, onUpdate }) => {
             </button>
             
             <img
-              src={selectedPhoto.path}
+              src={selectedPhoto.filename ? photoAPI.getPhotoUrl(selectedPhoto.filename) : selectedPhoto.path}
               alt={selectedPhoto.originalName}
               className="max-w-full max-h-full object-contain rounded-lg"
             />

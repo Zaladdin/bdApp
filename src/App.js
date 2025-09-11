@@ -239,9 +239,12 @@ function App() {
           <nav className="glass-effect rounded-lg mx-4 mt-4 mb-8">
             <div className="container mx-auto px-6 py-4">
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-white">
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="text-2xl font-bold text-white hover:text-opacity-80 transition-opacity duration-200"
+                >
                   Организатор Дня Рождения
-                </h1>
+                </button>
                 <UserMenu 
                   user={user}
                   onLogout={handleLogout}
@@ -267,9 +270,12 @@ function App() {
           <nav className="glass-effect rounded-lg mx-4 mt-4 mb-8">
             <div className="container mx-auto px-6 py-4">
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-white">
+                <button
+                  onClick={() => setCurrentView('dashboard')}
+                  className="text-2xl font-bold text-white hover:text-opacity-80 transition-opacity duration-200"
+                >
                   Организатор Дня Рождения
-                </h1>
+                </button>
                 <UserMenu 
                   user={user}
                   onLogout={handleLogout}
