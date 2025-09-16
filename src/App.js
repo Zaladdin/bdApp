@@ -15,9 +15,7 @@ import DataSync from './components/DataSync';
 import { eventAPI } from './services/api';
 import syncService from './services/sync';
 
-// Настройка axios
-const isDevelopment = process.env.NODE_ENV === 'development';
-axios.defaults.baseURL = isDevelopment ? 'http://localhost:5000/api' : '/api';
+// Настройка axios - используем настройки из api.js
 
 function App() {
   const [user, setUser] = useState(null);

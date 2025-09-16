@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Redirect URI</title>
+</head>
+<body>
+    <h1>Тест Redirect URI для Яндекс OAuth</h1>
+    
+    <div id="info">
+        <h2>Текущая информация:</h2>
+        <p><strong>Origin:</strong> <span id="origin"></span></p>
+        <p><strong>Redirect URI:</strong> <span id="redirect"></span></p>
+        <p><strong>Encoded Redirect URI:</strong> <span id="encoded"></span></p>
+    </div>
+
+    <div id="instructions">
+        <h2>Инструкции:</h2>
+        <p>1. Скопируйте "Redirect URI" выше</p>
+        <p>2. Зайдите в настройки Яндекс OAuth приложения</p>
+        <p>3. Добавьте этот URL в раздел "Callback URL"</p>
+        <p>4. Сохраните настройки</p>
+    </div>
+
+    <script>
+        const origin = window.location.origin;
+        const redirect = `${origin}/yandex-callback.html`;
+        const encoded = encodeURIComponent(redirect);
+
+        document.getElementById('origin').textContent = origin;
+        document.getElementById('redirect').textContent = redirect;
+        document.getElementById('encoded').textContent = encoded;
+    </script>
+</body>
+</html>

@@ -32,7 +32,9 @@
     "eject": "react-scripts eject",
     "server": "cd server && nodemon index.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "check-deploy": "node check-deployment.js",
+    "deploy": "vercel --prod"
   },
   "eslintConfig": {
     "extends": [

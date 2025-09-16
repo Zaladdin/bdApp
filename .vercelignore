@@ -1,0 +1,9 @@
+# Исключаем ненужные файлы из деплоя
+.vs/
+.vscode/
+node_modules/
+temp/
+test-*.html
+*.log
+.env.local
+server/uploads/
