@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000/api' 
+  ? 'http://localhost:5000/api' 
   : '/api';
 
 const api = axios.create({
@@ -30,29 +30,50 @@ export const eventAPI = {
   deleteEvent: (eventId) => api.delete(`/events?eventId=${eventId}`),
 };
 
-// API для фотографий (пока используем localStorage)
+// API для фотографий
 export const photoAPI = {
-  // Загрузить фотографию (локально)
-  uploadPhoto: (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const photoData = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          originalName: file.name,
-          path: e.target.result,
-          size: file.size,
-          type: file.type,
-          uploadedAt: new Date().toISOString()
-        };
-        resolve({ data: photoData });
-      };
-      reader.readAsDataURL(file);
-    });
+  // Загрузить фотографию на сервер
+  uploadPhoto: async (file) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    
+    try {
+      const response = await api.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Ошибка загрузки на сервер:', error);
+      throw error;
+    }
+  },
+  
+  // Удалить фотографию
+  deletePhoto: async (photoId, photoData) => {
+    try {
+      await api.delete(`/photo/${photoId}`, {
+        data: {
+          storage: photoData.storage,
+          path: photoData.path
+        }
+      });
+    } catch (error) {
+      console.error('Ошибка удаления фотографии:', error);
+      throw error;
+    }
   },
   
   // Получить URL фотографии
-  getPhotoUrl: (path) => path,
+  getPhotoUrl: (path, storage = 'local') => {
+    if (storage === 'cloudinary') {
+      return path; // Cloudinary URL
+    } else {
+      // Локальный файл или Data URL
+      return path.startsWith('data:') ? path : `/uploads/${path}`;
+    }
+  },
 };
 
 export default api;

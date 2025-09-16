@@ -1,25 +1,54 @@
+require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Cloudinary configuration
+console.log('Cloudinary config:', {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY ? '***' + process.env.CLOUDINARY_API_KEY.slice(-4) : 'NOT SET',
+  api_secret: process.env.CLOUDINARY_API_SECRET ? '***' + process.env.CLOUDINARY_API_SECRET.slice(-4) : 'NOT SET'
+});
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Создаем папки если их нет
+// Serve static files (для тестовой страницы)
+app.use(express.static(path.join(__dirname, '..')));
+
+// Создаем папки если их нет (для локального fallback)
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Настройка multer для загрузки файлов
-const storage = multer.diskStorage({
+// Настройка Cloudinary storage для multer
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'birthday-app-photos',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [{ width: 1200, height: 1200, crop: 'limit' }] // Автоматическое сжатие
+  }
+});
+
+// Fallback storage для локального хранения
+const localStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
@@ -28,6 +57,12 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
+
+// Выбираем storage в зависимости от наличия Cloudinary конфигурации
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+const storage = isCloudinaryConfigured ? cloudinaryStorage : localStorage;
+
+console.log('Storage mode:', isCloudinaryConfigured ? 'CLOUDINARY' : 'LOCAL');
 
 const upload = multer({ 
   storage: storage,
@@ -155,20 +190,35 @@ app.get('/api/user/:userId/events', (req, res) => {
 // Загрузить фотографию
 app.post('/api/upload', upload.single('photo'), (req, res) => {
   try {
+    console.log('Upload request received');
+    console.log('File info:', req.file);
+    console.log('Environment check:', {
+      cloud_name: !!process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: !!process.env.CLOUDINARY_API_KEY,
+      api_secret: !!process.env.CLOUDINARY_API_SECRET
+    });
+
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    // Проверяем, используем ли мы Cloudinary или локальное хранилище
+    const isUsingCloudinary = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+
+    console.log('Using storage:', isUsingCloudinary ? 'CLOUDINARY' : 'LOCAL');
 
     const photoData = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       originalName: req.file.originalname,
       filename: req.file.filename,
-      path: `/uploads/${req.file.filename}`,
+      path: isUsingCloudinary ? req.file.path : `/uploads/${req.file.filename}`,
       size: req.file.size,
       type: req.file.mimetype,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      storage: isUsingCloudinary ? 'cloudinary' : 'local'
     };
 
+    console.log('Photo data:', photoData);
     res.json(photoData);
   } catch (error) {
     console.error('Error uploading photo:', error);
@@ -187,6 +237,32 @@ app.get('/uploads/:filename', (req, res) => {
     }
   } catch (error) {
     console.error('Error serving file:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Удалить фотографию
+app.delete('/api/photo/:photoId', async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const { storage, path } = req.body;
+
+    if (storage === 'cloudinary') {
+      // Удаляем из Cloudinary
+      const publicId = path.split('/').pop().split('.')[0]; // Извлекаем public_id из URL
+      await cloudinary.uploader.destroy(`birthday-app-photos/${publicId}`);
+    } else {
+      // Удаляем локальный файл
+      const filename = path.split('/').pop();
+      const filePath = path.join(uploadsDir, filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting photo:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

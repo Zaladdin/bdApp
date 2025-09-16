@@ -7,7 +7,7 @@ import {
   Eye,
   X
 } from 'lucide-react';
-// import { photoAPI } from '../services/api';
+import { photoAPI } from '../services/api';
 
 const Photos = ({ photos, onUpdate }) => {
   const [showModal, setShowModal] = useState(false);
@@ -15,38 +15,48 @@ const Photos = ({ photos, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     setUploading(true);
     try {
       const newPhotos = [];
-      let processedFiles = 0;
-
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const newPhoto = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            originalName: file.name,
-            path: e.target.result, // Data URL
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          };
-          
-          newPhotos.push(newPhoto);
-          processedFiles++;
-
-          // Когда все файлы обработаны, обновляем состояние
-          if (processedFiles === files.length) {
-            onUpdate({ photos: [...photos, ...newPhotos] });
-            setUploading(false);
+      
+      // Загружаем файлы последовательно
+      for (const file of files) {
+        try {
+          // Сначала пробуем загрузить на сервер
+          const response = await photoAPI.uploadPhoto(file);
+          if (response.data) {
+            newPhotos.push(response.data);
           }
-        };
-        reader.readAsDataURL(file);
-      });
+        } catch (serverError) {
+          console.warn('Сервер недоступен, используем локальное сохранение:', serverError);
+          // Fallback к локальному сохранению
+          const reader = new FileReader();
+          await new Promise((resolve, reject) => {
+            reader.onload = (e) => {
+              const newPhoto = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                originalName: file.name,
+                path: e.target.result, // Data URL
+                size: file.size,
+                type: file.type,
+                uploadedAt: new Date().toISOString(),
+                storage: 'local'
+              };
+              newPhotos.push(newPhoto);
+              resolve();
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+      }
+      
+      // Обновляем состояние с новыми фотографиями
+      onUpdate({ photos: [...photos, ...newPhotos] });
       
       // Очищаем input
       if (fileInputRef.current) {
@@ -55,13 +65,27 @@ const Photos = ({ photos, onUpdate }) => {
     } catch (error) {
       console.error('Ошибка при загрузке фотографий:', error);
       alert('Ошибка при загрузке фотографий');
+    } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = (photoId) => {
+  const handleDelete = async (photoId) => {
     if (window.confirm('Вы уверены, что хотите удалить эту фотографию?')) {
       try {
+        const photoToDelete = photos.find(photo => photo.id === photoId);
+        if (!photoToDelete) return;
+
+        // Если фотография сохранена на сервере, удаляем её оттуда
+        if (photoToDelete.storage === 'cloudinary' || photoToDelete.storage === 'server') {
+          try {
+            await photoAPI.deletePhoto(photoId, photoToDelete);
+          } catch (serverError) {
+            console.warn('Не удалось удалить с сервера, удаляем только локально:', serverError);
+          }
+        }
+
+        // Удаляем из локального состояния
         const updatedPhotos = photos.filter(photo => photo.id !== photoId);
         onUpdate({ photos: updatedPhotos });
       } catch (error) {
@@ -73,8 +97,9 @@ const Photos = ({ photos, onUpdate }) => {
 
   const handleDownload = (photo) => {
     const link = document.createElement('a');
-    link.href = photo.path; // Data URL
+    link.href = photoAPI.getPhotoUrl(photo.path, photo.storage);
     link.download = photo.originalName;
+    link.target = '_blank'; // Открываем в новой вкладке для Cloudinary
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -161,7 +186,7 @@ const Photos = ({ photos, onUpdate }) => {
               >
                 <div className="relative">
                   <img
-                    src={photo.path}
+                    src={photoAPI.getPhotoUrl(photo.path, photo.storage)}
                     alt={photo.originalName}
                     className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => {
@@ -224,7 +249,7 @@ const Photos = ({ photos, onUpdate }) => {
             </button>
             
             <img
-              src={selectedPhoto.path}
+              src={photoAPI.getPhotoUrl(selectedPhoto.path, selectedPhoto.storage)}
               alt={selectedPhoto.originalName}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
