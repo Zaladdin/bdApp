@@ -1,0 +1,11 @@
+{
+  "orgId": "zaladdin",
+  "projectId": "bd-ka4w6a0of",
+  "settings": {
+    "framework": "create-react-app",
+    "buildCommand": "npm run build",
+    "outputDirectory": "build",
+    "installCommand": "npm install",
+    "devCommand": "npm start"
+  }
+}
