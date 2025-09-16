@@ -34,7 +34,10 @@
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "vercel-build": "npm run build",
     "check-deploy": "node check-deployment.js",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "deploy-public": "vercel --prod --public --name birthday-organizer",
+    "deploy-win": "deploy.bat",
+    "deploy-linux": "chmod +x deploy.sh && ./deploy.sh"
   },
   "eslintConfig": {
     "extends": [

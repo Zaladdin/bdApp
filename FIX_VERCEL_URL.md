@@ -8,12 +8,37 @@
 
 ### 1. Сделать проект публичным в панели Vercel
 
+**Вариант A: Через настройки проекта**
 1. Откройте [vercel.com](https://vercel.com)
 2. Войдите в свой аккаунт
 3. Найдите проект `birthday-organizer` или `bd-ka4w6a0of`
 4. Перейдите в **Settings** → **General**
-5. В разделе **Visibility** выберите **Public**
-6. Сохраните изменения
+5. Ищите опции: **Public**, **Visibility**, **Access** или **Privacy**
+6. Если нет - попробуйте **Settings** → **Security** или **Settings** → **Deployment**
+
+**Вариант B: Через Vercel CLI (рекомендуется)**
+```bash
+# Войти в аккаунт
+vercel login
+
+# Связать проект
+vercel link
+
+# Проверить настройки
+vercel env ls
+
+# Деплой как публичный проект
+vercel --prod --public
+```
+
+**Вариант C: Создать новый публичный проект**
+```bash
+# Удалить старый проект
+vercel project rm birthday-organizer
+
+# Создать новый публичный проект
+vercel --prod --name birthday-organizer --public
+```
 
 ### 2. Настроить фиксированный URL
 
