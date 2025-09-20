@@ -1,0 +1,63 @@
+{
+  "users": {
+    "test-user-123": {
+      "name": "Тестовый пользователь",
+      "email": "test@example.com",
+      "guests": [
+        {
+          "id": "1",
+          "name": "Гость 1",
+          "email": "guest1@example.com",
+          "status": "pending"
+        }
+      ],
+      "wishlist": [
+        {
+          "id": "1",
+          "name": "Подарок 1",
+          "description": "Описание подарка"
+        }
+      ],
+      "location": {
+        "name": "Тестовое место",
+        "address": "Тестовый адрес",
+        "date": "2024-01-01",
+        "time": "18:00"
+      },
+      "photos": [],
+      "lastUpdated": "2025-09-20T22:05:34.820Z"
+    }
+  },
+  "events": {
+    "test-event-456": {
+      "ownerId": "test-user-123",
+      "ownerName": "Тестовый пользователь",
+      "guests": [
+        {
+          "id": "1",
+          "name": "Гость 1",
+          "email": "guest1@example.com",
+          "status": "confirmed"
+        }
+      ],
+      "wishlist": [
+        {
+          "id": "1",
+          "name": "Подарок 1",
+          "description": "Описание подарка",
+          "selectedBy": []
+        }
+      ],
+      "location": {
+        "name": "Место проведения",
+        "address": "Адрес места",
+        "date": "2024-01-01",
+        "time": "18:00"
+      },
+      "photos": [],
+      "createdAt": "2025-09-20T22:05:34.869Z",
+      "isArchived": false,
+      "lastUpdated": "2025-09-20T22:05:34.870Z"
+    }
+  }
+}

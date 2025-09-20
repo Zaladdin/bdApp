@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { readData, writeData } = require('./database-supabase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -78,41 +79,20 @@ const upload = multer({
   }
 });
 
-// Файл для хранения данных
-const dataFile = path.join(__dirname, 'data.json');
-
-// Функция для чтения данных
-const readData = () => {
-  try {
-    if (fs.existsSync(dataFile)) {
-      const data = fs.readFileSync(dataFile, 'utf8');
-      return JSON.parse(data);
-    }
-    return { users: {}, events: {} };
-  } catch (error) {
-    console.error('Error reading data:', error);
-    return { users: {}, events: {} };
-  }
-};
-
-// Функция для записи данных
-const writeData = (data) => {
-  try {
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing data:', error);
-    return false;
-  }
-};
+// Функции readData и writeData теперь импортируются из database-supabase.js
 
 // API Routes
 
 // Получить данные пользователя
-app.get('/api/user/:userId', (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
-    const data = readData();
-    const userData = data.users[req.params.userId] || null;
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    
+    const data = await readData();
+    const userData = data.users[userId] || null;
     res.json(userData);
   } catch (error) {
     console.error('Error getting user data:', error);
@@ -121,15 +101,21 @@ app.get('/api/user/:userId', (req, res) => {
 });
 
 // Сохранить данные пользователя
-app.post('/api/user/:userId', (req, res) => {
+app.post('/api/users', async (req, res) => {
   try {
-    const data = readData();
-    data.users[req.params.userId] = {
-      ...req.body,
+    const { userId, userData } = req.body;
+    if (!userId || !userData) {
+      return res.status(400).json({ error: 'userId and userData are required' });
+    }
+    
+    const data = await readData();
+    data.users[userId] = {
+      ...userData,
       lastUpdated: new Date().toISOString()
     };
     
-    if (writeData(data)) {
+    const success = await writeData(data);
+    if (success) {
       res.json({ success: true });
     } else {
       res.status(500).json({ error: 'Failed to save data' });
@@ -141,27 +127,48 @@ app.post('/api/user/:userId', (req, res) => {
 });
 
 // Получить мероприятие
-app.get('/api/event/:eventId', (req, res) => {
+app.get('/api/events', async (req, res) => {
   try {
-    const data = readData();
-    const event = data.events[req.params.eventId] || null;
-    res.json(event);
+    const { eventId, userId } = req.query;
+    
+    if (eventId) {
+      // Получить конкретное мероприятие
+      const data = await readData();
+      const event = data.events[eventId] || null;
+      res.json(event);
+    } else if (userId) {
+      // Получить все мероприятия пользователя
+      const data = await readData();
+      const userEvents = Object.entries(data.events)
+        .filter(([id, event]) => event.ownerId === userId)
+        .map(([id, event]) => ({ id, ...event }));
+      
+      res.json(userEvents);
+    } else {
+      res.status(400).json({ error: 'eventId or userId is required' });
+    }
   } catch (error) {
-    console.error('Error getting event:', error);
+    console.error('Error getting events:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Сохранить мероприятие
-app.post('/api/event/:eventId', (req, res) => {
+app.post('/api/events', async (req, res) => {
   try {
-    const data = readData();
-    data.events[req.params.eventId] = {
-      ...req.body,
+    const { eventId, eventData } = req.body;
+    if (!eventId || !eventData) {
+      return res.status(400).json({ error: 'eventId and eventData are required' });
+    }
+    
+    const data = await readData();
+    data.events[eventId] = {
+      ...eventData,
       lastUpdated: new Date().toISOString()
     };
     
-    if (writeData(data)) {
+    const success = await writeData(data);
+    if (success) {
       res.json({ success: true });
     } else {
       res.status(500).json({ error: 'Failed to save event' });
@@ -172,17 +179,25 @@ app.post('/api/event/:eventId', (req, res) => {
   }
 });
 
-// Получить все мероприятия пользователя
-app.get('/api/user/:userId/events', (req, res) => {
+// Удалить мероприятие
+app.delete('/api/events', async (req, res) => {
   try {
-    const data = readData();
-    const userEvents = Object.entries(data.events)
-      .filter(([id, event]) => event.ownerId === req.params.userId)
-      .map(([id, event]) => ({ id, ...event }));
+    const { eventId } = req.query;
+    if (!eventId) {
+      return res.status(400).json({ error: 'eventId is required' });
+    }
     
-    res.json(userEvents);
+    const data = await readData();
+    delete data.events[eventId];
+    
+    const success = await writeData(data);
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ error: 'Failed to delete event' });
+    }
   } catch (error) {
-    console.error('Error getting user events:', error);
+    console.error('Error deleting event:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -267,22 +282,6 @@ app.delete('/api/photo/:photoId', async (req, res) => {
   }
 });
 
-// Удалить мероприятие
-app.delete('/api/event/:eventId', (req, res) => {
-  try {
-    const data = readData();
-    delete data.events[req.params.eventId];
-    
-    if (writeData(data)) {
-      res.json({ success: true });
-    } else {
-      res.status(500).json({ error: 'Failed to delete event' });
-    }
-  } catch (error) {
-    console.error('Error deleting event:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -98,6 +98,14 @@ function App() {
             syncService.saveData(user.id, updatedData);
           }
           
+          // ВАЖНО: Сохраняем на сервер
+          try {
+            await eventAPI.saveEvent(currentEventId, updatedEvent);
+            console.log('Event data saved to server:', updatedEvent);
+          } catch (serverError) {
+            console.error('Failed to save to server:', serverError);
+          }
+          
           console.log('Event data saved to localStorage and sync service:', updatedData);
         }
       } else {
@@ -105,6 +113,15 @@ function App() {
         if (user) {
           localStorage.setItem(`birthdayAppData_${user.id}`, JSON.stringify(updatedData));
           syncService.saveData(user.id, updatedData);
+          
+          // Сохраняем на сервер
+          try {
+            await userAPI.saveUser(user.id, updatedData);
+            console.log('User data saved to server:', updatedData);
+          } catch (serverError) {
+            console.error('Failed to save to server:', serverError);
+          }
+          
           console.log('User data saved to localStorage and sync service (fallback):', updatedData);
         }
       }
@@ -124,7 +141,7 @@ function App() {
     );
   }
 
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData) => {
     setUser(userData);
     // Загружаем данные для нового пользователя
     try {
@@ -143,6 +160,18 @@ function App() {
           console.log('Current event loaded:', currentEvent);
           return;
         }
+      }
+      
+      // Пытаемся загрузить данные с сервера
+      try {
+        const serverData = await userAPI.getUser(userData.id);
+        if (serverData.data) {
+          setEventData(serverData.data);
+          console.log('User data loaded from server:', serverData.data);
+          return;
+        }
+      } catch (serverError) {
+        console.log('Server not available, loading from localStorage:', serverError);
       }
       
       // Fallback к старому способу
