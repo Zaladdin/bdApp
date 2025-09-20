@@ -12,7 +12,7 @@ import UserMenu from './components/UserMenu';
 import Invitations from './components/Invitations';
 import MyEvents from './components/MyEvents';
 import DataSync from './components/DataSync';
-import { eventAPI } from './services/api';
+import { eventAPI, userAPI } from './services/api';
 import syncService from './services/sync';
 
 // Настройка axios - используем настройки из api.js
