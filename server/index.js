@@ -6,7 +6,42 @@ const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const { readData, writeData } = require('./database-supabase');
+// Пытаемся загрузить Supabase, если не получается - используем файловое хранение
+let readData, writeData;
+try {
+  const supabase = require('./database-supabase');
+  readData = supabase.readData;
+  writeData = supabase.writeData;
+  console.log('Using Supabase database');
+} catch (error) {
+  console.log('Supabase not available, using file storage:', error.message);
+  
+  // Fallback к файловому хранению
+  const dataFile = path.join(__dirname, 'data.json');
+  
+  readData = async () => {
+    try {
+      if (fs.existsSync(dataFile)) {
+        const data = fs.readFileSync(dataFile, 'utf8');
+        return JSON.parse(data);
+      }
+      return { users: {}, events: {} };
+    } catch (error) {
+      console.error('Error reading data:', error);
+      return { users: {}, events: {} };
+    }
+  };
+  
+  writeData = async (data) => {
+    try {
+      fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+      return true;
+    } catch (error) {
+      console.error('Error writing data:', error);
+      return false;
+    }
+  };
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;

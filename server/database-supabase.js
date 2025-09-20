@@ -10,6 +10,11 @@ console.log('Supabase config:', {
   key: process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET'
 });
 
+// Проверяем, что переменные окружения установлены
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+  throw new Error('Supabase environment variables not set');
+}
+
 // Инициализация Supabase клиента
 const supabase = createClient(
   process.env.SUPABASE_URL,
