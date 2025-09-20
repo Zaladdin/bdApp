@@ -3,10 +3,6 @@
   "name": "birthday-organizer",
   "builds": [
     {
-      "src": "server/index.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -15,10 +11,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server/index.js"
-    },
     {
       "src": "/(.*)",
       "dest": "/build/index.html"
@@ -31,24 +23,5 @@
     "CLOUDINARY_API_SECRET": "9Fy1dqGgHrUf29SmBM3wI5J6568",
     "SUPABASE_URL": "https://jtpnkwlxplycfcwzrrro.supabase.co",
     "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0cG5rd2x4cGx5Y2Zjd3pycnJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MDQ0NDEsImV4cCI6MjA3Mzk4MDQ0MX0.VFhFG1yPYHYN1eMiVFOLHkhN8O5jvCyMZkDVpd_7BwI"
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
-    }
-  ]
+  }
 }
